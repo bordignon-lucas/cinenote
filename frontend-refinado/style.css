@@ -869,6 +869,13 @@ body.pagina-login {
     text-align: left;
 }
 
+/* O atributo "hidden" tem baixa prioridade no CSS — sem essa regra, o
+   "display: flex" acima ganha e os dois formulários (entrar/criar conta)
+   aparecem juntos ao mesmo tempo, em vez de alternar pela aba escolhida. */
+.login-form[hidden] {
+    display: none;
+}
+
 .login-form .campo {
     display: flex;
     flex-direction: column;

@@ -74,6 +74,13 @@ formCriar.addEventListener("submit", async (e) => {
     const nome  = document.getElementById("criar-nome").value;
     const email = document.getElementById("criar-email").value;
     const senha = document.getElementById("criar-senha").value;
+    const senhaConfirmar = document.getElementById("criar-senha-confirmar").value;
+
+    if (senha !== senhaConfirmar) {
+        erro.textContent = "As senhas digitadas não são iguais.";
+        erro.hidden = false;
+        return;
+    }
 
     const btn = formCriar.querySelector(".btn-login");
     btn.disabled = true;
