@@ -1,0 +1,28 @@
+{
+  "name": "cinenote",
+  "version": "1.0.0",
+  "description": "CineNote - lista de filmes e séries (projeto corrigido + testes automatizados)",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "jest --verbose",
+    "test:backend": "jest backend/tests/server.test.js --verbose",
+    "test:frontend": "jest backend/tests/app.test.js --verbose"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 30000
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1",
+    "mongoose": "^9.7.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "mongodb-memory-server": "^9.1.1",
+    "supertest": "^6.3.3"
+  }
+}

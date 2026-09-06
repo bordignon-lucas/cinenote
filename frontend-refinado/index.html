@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineNote</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>CineNote</h1>
+    </header>
+
+    <main>
+
+        <!-- Formulário de adicionar -->
+        <section class="secao">
+            <h2>Adicionar título</h2>
+            <div class="form-grid">
+                <div class="campo campo-titulo">
+                    <label for="titulo">Título</label>
+                    <input id="titulo" placeholder="Ex: Duna" autocomplete="off">
+                    <div id="sugestoes" class="sugestoes"></div>
+                </div>
+                <div class="campo">
+                    <label for="tipo">Tipo</label>
+                    <select id="tipo">
+                        <option value="Filme">Filme</option>
+                        <option value="Série">Série</option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="nota">Nota</label>
+                    <input id="nota" type="number" placeholder="0 a 10" min="0" max="10" step="0.1">
+                </div>
+                <div class="campo">
+                    <label for="status">Status</label>
+                    <select id="status">
+                        <option value="Quero Assistir">Quero Assistir</option>
+                        <option value="Assistido">Assistido</option>
+                    </select>
+                </div>
+                <button class="btn-salvar" onclick="adicionar()">Salvar</button>
+            </div>
+        </section>
+
+        <!-- Favoritos em destaque (carrossel arrastável) -->
+        <section class="secao destaque-favorito" id="secao-destaque" hidden>
+            <h2>Favoritos</h2>
+            <div class="carrossel-favoritos" id="carrossel-favoritos"></div>
+        </section>
+
+        <!-- Lista de títulos -->
+        <section class="secao">
+            <h2>Lista de títulos</h2>
+            <p id="stats" class="stats"></p>
+            <div class="filtros">
+                <input id="busca" placeholder="🔍  Buscar por nome..." oninput="listarTitulos()">
+                <select id="filtroTipo" onchange="listarTitulos()">
+                    <option value="todos">Todos</option>
+                    <option value="Filme">Filme</option>
+                    <option value="Série">Série</option>
+                </select>
+                <select id="ordenarPor" onchange="listarTitulos()">
+                    <option value="padrao">Ordenar por...</option>
+                    <option value="nome-asc">Nome (A-Z)</option>
+                    <option value="nome-desc">Nome (Z-A)</option>
+                    <option value="ano-desc">Ano (mais recente)</option>
+                    <option value="ano-asc">Ano (mais antigo)</option>
+                </select>
+            </div>
+            <div id="lista"></div>
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+
+</body>
+</html>

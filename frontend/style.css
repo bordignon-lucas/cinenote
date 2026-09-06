@@ -1,0 +1,324 @@
+/* ── Importar fonte ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+/* ── Reset e base ───────────────────────────────────────────────────────────── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg:           #1a1a2e;
+    --surface:      #23233a;
+    --surface2:     #2c2c47;
+    --surface3:     #353554;
+    --border:       #3a3a5c;
+    --primary:      #8b5cf6;
+    --primary-hover:#7c3aed;
+    --primary-glow: rgba(139, 92, 246, 0.35);
+    --gold:         #f5c518;
+    --text:         #e8e8f0;
+    --text-muted:   #9090b0;
+    --green:        #46d369;
+    --red-soft:     #f87171;
+    --radius:       8px;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100vh;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+header {
+    background: linear-gradient(180deg, #121220 0%, transparent 100%);
+    padding: 24px 48px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+}
+
+header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--primary);
+    text-shadow: 0 0 30px var(--primary-glow);
+}
+
+/* ── Layout principal ───────────────────────────────────────────────────────── */
+main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+/* ── Seções ─────────────────────────────────────────────────────────────────── */
+.secao {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 32px;
+}
+
+.secao h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* ── Formulário de adicionar ────────────────────────────────────────────────── */
+.form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 80px 1.2fr auto;
+    gap: 12px;
+    align-items: center;
+}
+
+/* ── Inputs e selects ───────────────────────────────────────────────────────── */
+input, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.875rem;
+    padding: 10px 14px;
+    transition: border-color 0.2s, background 0.2s;
+    width: 100%;
+    outline: none;
+}
+
+input::placeholder {
+    color: var(--text-muted);
+}
+
+input:focus, select:focus {
+    border-color: var(--primary);
+    background: var(--surface3);
+}
+
+select option {
+    background: var(--surface2);
+}
+
+/* ── Botões ─────────────────────────────────────────────────────────────────── */
+button {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: none;
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+
+button:active {
+    transform: scale(0.97);
+}
+
+.btn-salvar {
+    background: var(--primary);
+    color: #fff;
+}
+.btn-salvar:hover {
+    background: var(--primary-hover);
+}
+
+.btn-editar {
+    background: var(--surface3);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+.btn-editar:hover {
+    background: var(--surface2);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.btn-excluir {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+.btn-excluir:hover {
+    background: rgba(248, 113, 113, 0.12);
+    color: var(--red-soft);
+    border-color: var(--red-soft);
+}
+
+.btn-confirmar {
+    background: var(--green);
+    color: #000;
+}
+.btn-confirmar:hover {
+    filter: brightness(1.1);
+}
+
+.btn-cancelar {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+.btn-cancelar:hover {
+    background: var(--surface3);
+}
+
+/* ── Barra de busca e filtro ────────────────────────────────────────────────── */
+.filtros {
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* ── Cards da lista ─────────────────────────────────────────────────────────── */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    border-color: var(--primary);
+    background: var(--surface2);
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+
+.card-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.card-titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    flex: 1;
+    min-width: 120px;
+}
+
+.badge-tipo {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.badge-nota {
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.badge-nota::before {
+    content: "★";
+}
+
+.badge-status {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.badge-status.assistido {
+    background: rgba(70, 211, 105, 0.15);
+    color: var(--green);
+    border: 1px solid rgba(70, 211, 105, 0.3);
+}
+
+.badge-status.quero-assistir {
+    background: rgba(139, 92, 246, 0.12);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.card-acoes {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+/* ── Formulário de edição inline ────────────────────────────────────────────── */
+.form-edicao {
+    display: none;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    grid-template-columns: 2fr 1fr 80px 1.2fr auto auto;
+    gap: 10px;
+    align-items: center;
+}
+
+/* ── Mensagem vazia ─────────────────────────────────────────────────────────── */
+.msg-vazia {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px 0;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+/* ── Responsivo ─────────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    header { padding: 20px 20px; }
+    header h1 { font-size: 1.5rem; }
+    main { padding: 24px 16px 60px; }
+    .secao { padding: 20px 16px; }
+
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .form-grid button {
+        grid-column: span 2;
+    }
+
+    .filtros {
+        grid-template-columns: 1fr;
+    }
+
+    .card-acoes {
+        margin-left: 0;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .form-edicao {
+        grid-template-columns: 1fr 1fr;
+    }
+    .form-edicao button {
+        grid-column: span 1;
+    }
+}

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineNote</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg:           #1a1a2e;
+    --surface:      #23233a;
+    --surface2:     #2c2c47;
+    --surface3:     #353554;
+    --border:       #3a3a5c;
+    --primary:      #8b5cf6;
+    --primary-hover:#7c3aed;
+    --primary-glow: rgba(139, 92, 246, 0.35);
+    --gold:         #f5c518;
+    --text:         #e8e8f0;
+    --text-muted:   #9090b0;
+    --green:        #46d369;
+    --radius:       8px;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100vh;
+}
+
+header {
+    background: linear-gradient(180deg, #121220 0%, transparent 100%);
+    padding: 48px 24px 32px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--primary);
+    text-shadow: 0 0 30px var(--primary-glow);
+}
+
+header p {
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 1rem;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+.links {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+.links a {
+    display: inline-block;
+    padding: 10px 22px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.links a:active { transform: scale(0.97); }
+
+.link-principal { background: var(--primary); color: #fff; }
+.link-principal:hover { background: var(--primary-hover); }
+
+.link-secundario { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.link-secundario:hover { border-color: var(--primary); color: var(--primary); }
+
+.secao {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 28px;
+}
+
+.secao h2 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.secao p { line-height: 1.7; color: var(--text); }
+
+.lista-features {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.lista-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.lista-features li::before {
+    content: "★";
+    color: var(--gold);
+    flex-shrink: 0;
+}
+
+.stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.stack span {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+}
+
+/* ── Diagrama de arquitetura (HTML/CSS puro, sem dependências) ────────────── */
+.diagrama {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 20px 0 8px;
+}
+
+.caixa {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    text-align: center;
+    min-width: 140px;
+}
+
+.caixa strong { display: block; font-size: 0.9rem; margin-bottom: 4px; }
+.caixa span { font-size: 0.72rem; color: var(--text-muted); }
+
+.caixa.destaque { border-color: var(--primary); box-shadow: 0 0 16px var(--primary-glow); }
+
+.seta {
+    color: var(--text-muted);
+    font-size: 1.4rem;
+    padding: 0 4px;
+}
+
+.diagrama-coluna {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding: 24px;
+}
+
+@media (max-width: 600px) {
+    .lista-features { grid-template-columns: 1fr; }
+    .diagrama { flex-direction: column; }
+    .seta { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>CineNote</h1>
+    <p>Um watchlist de filmes e séries: cadastre títulos, dê nota, marque favoritos
+    e acompanhe o que já assistiu — com autocomplete de filmes e séries via TMDb.</p>
+    <div class="links">
+        <a class="link-principal" href="https://cinenote.onrender.com" target="_blank" rel="noopener">Acessar a aplicação</a>
+        <a class="link-secundario" href="https://github.com/bordignon-lucas/cinenote" target="_blank" rel="noopener">Ver código no GitHub</a>
+    </div>
+</header>
+
+<main>
+
+    <section class="secao">
+        <h2>Sobre o projeto</h2>
+        <p>
+            CineNote é um projeto acadêmico desenvolvido ao longo das disciplinas de
+            Extensão, com o objetivo de aplicar, na prática, o desenvolvimento de uma
+            aplicação web completa: front-end, backend com API REST, banco de dados,
+            testes automatizados e hospedagem em produção.
+        </p>
+    </section>
+
+    <section class="secao">
+        <h2>Funcionalidades</h2>
+        <ul class="lista-features">
+            <li>Cadastro de filmes e séries com nota, tipo e status</li>
+            <li>Autocomplete de títulos com pôster, via API da TMDb</li>
+            <li>Ano de lançamento, gênero e diretor preenchidos automaticamente</li>
+            <li>Favoritos em carrossel arrastável, mantidos também na lista</li>
+            <li>Ordenação por nome ou ano, e busca por nome</li>
+            <li>Página de detalhes com sinopse e comentário pessoal</li>
+            <li>Edição e exclusão com confirmação</li>
+            <li>41 testes automatizados (Jest + Supertest)</li>
+        </ul>
+    </section>
+
+    <section class="secao">
+        <h2>Arquitetura</h2>
+        <div class="diagrama">
+            <div class="caixa">
+                <strong>Front-end</strong>
+                <span>HTML, CSS e JavaScript</span>
+            </div>
+            <div class="seta">→</div>
+            <div class="caixa destaque">
+                <strong>Backend</strong>
+                <span>Node.js + Express</span>
+            </div>
+            <div class="seta">→</div>
+            <div class="caixa">
+                <strong>MongoDB Atlas</strong>
+                <span>Banco de dados</span>
+            </div>
+        </div>
+        <div class="diagrama" style="padding-top: 0;">
+            <div class="seta seta-baixo">↓</div>
+        </div>
+        <div class="diagrama" style="padding-top: 0;">
+            <div class="caixa">
+                <strong>TMDb API</strong>
+                <span>Sinopse, pôster, gênero e diretor</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="secao">
+        <h2>Tecnologias</h2>
+        <div class="stack">
+            <span>Node.js</span>
+            <span>Express</span>
+            <span>MongoDB</span>
+            <span>Mongoose</span>
+            <span>Jest</span>
+            <span>Supertest</span>
+            <span>HTML/CSS/JS</span>
+            <span>TMDb API</span>
+            <span>Render</span>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    CineNote — projeto acadêmico desenvolvido por Lucas Bordignon.
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineNote</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>CineNote</h1>
+    </header>
+
+    <main>
+
+        <!-- Formulário de adicionar -->
+        <section class="secao">
+            <h2>Adicionar título</h2>
+            <div class="form-grid">
+                <input id="titulo" placeholder="Título">
+                <!-- CORREÇÃO 2: campo tipo virou select com opções fixas -->
+                <select id="tipo">
+                    <option value="Filme">Filme</option>
+                    <option value="Série">Série</option>
+                </select>
+                <input id="nota" type="number" placeholder="Nota" min="0" max="10" step="0.1">
+                <select id="status">
+                    <option value="Quero Assistir">Quero Assistir</option>
+                    <option value="Assistido">Assistido</option>
+                </select>
+                <button class="btn-salvar" onclick="adicionar()">Salvar</button>
+            </div>
+        </section>
+
+        <!-- Lista de títulos -->
+        <section class="secao">
+            <h2>Lista de títulos</h2>
+            <div class="filtros">
+                <input id="busca" placeholder="🔍  Buscar por nome..." oninput="listarTitulos()">
+                <select id="filtroTipo" onchange="listarTitulos()">
+                    <option value="todos">Todos</option>
+                    <option value="Filme">Filme</option>
+                    <option value="Série">Série</option>
+                </select>
+            </div>
+            <div id="lista"></div>
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
