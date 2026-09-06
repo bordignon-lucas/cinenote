@@ -1,6 +1,6 @@
-// ── Configuração da API ────────────────────────────────────────────────────────
-// Mesma lógica do app.js: file:// (dev local) usa localhost:3000, servido
-// pelo próprio backend (produção) usa a mesma origem.
+// ── Endereço da API ────────────────────────────────────────────────────────────
+// Mesma ideia do app.js: no seu computador usa localhost:3000; hospedado
+// (produção), usa o mesmo endereço do site.
 const API_URL = location.protocol === "file:" ? "http://localhost:3000" : "";
 
 // ── Sessão / login ─────────────────────────────────────────────────────────────
@@ -32,9 +32,9 @@ async function fetchAutenticado(url, opcoes = {}) {
     return resposta;
 }
 
-// ── Id do título: lido da URL limpa ("/detalhe/<id>", em produção) ou do
-// formato antigo ("detalhe.html?id=<id>", usado ao abrir o arquivo direto do
-// disco em desenvolvimento local) — o que existir primeiro é usado.
+// ── Código do título: lido da URL bonita ("/detalhe/<código>", em produção)
+// ou do formato antigo ("detalhe.html?id=...", usado ao abrir o arquivo
+// direto do computador) — o que existir primeiro é usado.
 const params = new URLSearchParams(window.location.search);
 let id = params.get("id");
 if (!id) {

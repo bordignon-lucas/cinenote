@@ -13,10 +13,9 @@ const app = require("../server");
 afterEach(() => jest.clearAllMocks());
 afterAll(() => jest.restoreAllMocks());
 
-// ── Token válido para os testes que exigem login ─────────────────────────────
-// Todas as rotas de /titulos passaram a exigir autenticação: cada requisição
-// simula uma pessoa já logada (usuarioId "usr123"), assinado com o mesmo
-// segredo que o middleware usa para validar.
+// ── Token válido pros testes que exigem login ─────────────────────────────────
+// Todas as rotas de /titulos agora só funcionam pra quem está logado, então
+// aqui a gente simula uma pessoa já logada (usuarioId "usr123").
 const usuarioIdFalso = "usr123";
 const tokenValido = jwt.sign({ usuarioId: usuarioIdFalso }, JWT_SECRET);
 const cabecalhoAuth = { Authorization: `Bearer ${tokenValido}` };

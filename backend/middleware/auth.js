@@ -1,14 +1,14 @@
 const jwt = require("jsonwebtoken");
 
-// Em produção (Render) o JWT_SECRET deve vir das variáveis de ambiente.
-// O valor abaixo é só uma rede de segurança para desenvolvimento local, caso
-// alguém esqueça de configurar o .env — nunca deve ser usado em produção.
+// Em produção (Render), o JWT_SECRET tem que vir configurado nas variáveis
+// de ambiente. O valor abaixo é só um reserva pra rodar no seu computador
+// caso você esqueça de configurar o .env — nunca deve ser usado em produção.
 const JWT_SECRET = process.env.JWT_SECRET || "cinenote_segredo_dev_trocar_em_producao";
 
-// Protege rotas que só fazem sentido para quem está logado (a lista de
-// títulos de cada pessoa). Espera um cabeçalho "Authorization: Bearer <token>",
-// gerado no login/registro. Se o token for válido, guarda o id do usuário em
-// req.usuarioId para as rotas usarem no filtro dos dados.
+// Protege as rotas que só fazem sentido pra quem está logado (a lista de
+// títulos de cada pessoa). Confere o token que vem no cabeçalho da
+// requisição (gerado no login ou cadastro) e, se for válido, guarda o id da
+// pessoa em req.usuarioId pras próximas rotas usarem.
 function autenticar(req, res, next) {
     const cabecalho = req.headers.authorization;
 

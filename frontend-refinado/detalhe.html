@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CineNote — Detalhes</title>
     <script>
-        // Essa página agora também é aberta em endereços como
-        // "/detalhe/<código>" (URL limpa) — sem isso, o navegador tentaria
-        // buscar "style.css" dentro de uma pasta "detalhe" que não existe.
-        // Isso escreve o caminho certo antes do arquivo ser carregado: com
-        // "/" na frente quando servido pelo backend, e sem "/" (relativo)
-        // quando a página é aberta direto do disco (file://) em testes locais.
+        // Essa página também abre em endereços como "/detalhe/<código>" —
+        // sem isso, o navegador tentaria buscar o style.css dentro de uma
+        // pasta "detalhe" que não existe. Aqui a gente escreve o caminho
+        // certo antes do arquivo carregar.
         document.write(
             '<link rel="stylesheet" href="' +
             (location.protocol === "file:" ? "" : "/") +
@@ -34,8 +32,8 @@
     </main>
 
     <script>
-        // Mesmo motivo do style.css acima: garante que "detalhe.js" seja
-        // encontrado independente da URL usada para abrir essa página.
+        // Mesma ideia do style.css acima: garante que o detalhe.js seja
+        // encontrado, não importa qual URL abriu essa página.
         document.write(
             '<script src="' +
             (location.protocol === "file:" ? "" : "/") +

@@ -13,15 +13,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve o front-end refinado como arquivos estáticos — assim um único
-// serviço hospedado (ex: Render) cobre API e interface ao mesmo tempo,
-// sem precisar de dois hosts separados. Em desenvolvimento local isso não
-// atrapalha quem abre o index.html direto no navegador (file://).
+// Essa linha faz o próprio servidor entregar as páginas do site (HTML, CSS
+// e JS). Assim não precisa hospedar o site e a API em lugares diferentes.
 app.use(express.static(path.join(__dirname, "..", "frontend-refinado")));
 
-// URL limpa pra página de detalhes: "/detalhe/<id>" em vez de
-// "/detalhe.html?id=<id>". Serve o mesmo arquivo estático de sempre — o
-// front-end lê o id direto do caminho da URL (veja frontend-refinado/detalhe.js).
+// Deixa a URL da página de detalhes mais bonita: "/detalhe/<código>" em vez
+// de "/detalhe.html?id=...". O arquivo servido é sempre o mesmo — quem lê o
+// código na URL é o detalhe.js.
 app.get("/detalhe/:id", (req, res) => {
     res.sendFile(path.join(__dirname, "..", "frontend-refinado", "detalhe.html"));
 });
@@ -39,10 +37,10 @@ function formatarTexto(texto) {
         .join(" ");
 }
 
-// Gera um código curto e aleatório (8 caracteres) para usar na URL da
-// página de detalhes, em vez do _id real do MongoDB. Confere se já existe
-// um título com esse código antes de devolver (colisão é extremamente rara,
-// mas mais vale garantir).
+// Cria um código curto e aleatório pra usar na URL da página de detalhes,
+// em vez de mostrar o id de verdade do banco de dados. Antes de usar,
+// confere se esse código já não existe (é bem raro repetir, mas não custa
+// checar).
 async function gerarCodigoUrlUnico() {
     for (let tentativa = 0; tentativa < 5; tentativa++) {
         const codigo = crypto.randomBytes(6).toString("base64url");
@@ -58,11 +56,11 @@ function validarNota(nota) {
     return true;
 }
 
-// ── Sugestões de filmes/séries (TMDb) para autocompletar o título ────────────
-// Proxy para a API do TMDb: a chave fica só aqui no backend (variável de
-// ambiente TMDB_API_KEY), nunca exposta no front-end. Veja o README para
-// configurar. Se a chave não estiver configurada, devolve uma lista vazia em
-// vez de quebrar — o cadastro manual continua funcionando normalmente.
+// ── Sugestões de filmes e séries (TMDb) ───────────────────────────────────────
+// Essa rota busca as sugestões na TMDb por trás dos panos, então a chave da
+// API fica só aqui no servidor e nunca aparece no navegador. Se a chave não
+// estiver configurada, simplesmente não mostra sugestões — o cadastro manual
+// continua funcionando do mesmo jeito.
 app.get("/buscar-filme", async (req, res) => {
     try {
         const termo = (req.query.q || "").trim();
@@ -100,9 +98,9 @@ app.get("/buscar-filme", async (req, res) => {
     }
 });
 
-// ── Detalhes de um filme/série (sinopse, gênero, diretor) para a página de
-// detalhes — chamado uma vez, no momento em que o usuário escolhe uma
-// sugestão do autocomplete, e o resultado é salvo junto com o título.
+// Busca sinopse, gênero e diretor de um filme ou série na TMDb. É chamado
+// só uma vez, quando a pessoa escolhe uma sugestão, e o resultado fica
+// salvo junto com o título.
 app.get("/detalhes-filme", async (req, res) => {
     try {
         const { tmdbId, tipo } = req.query;
@@ -143,9 +141,10 @@ app.get("/detalhes-filme", async (req, res) => {
     }
 });
 
-// ── Autenticação ──────────────────────────────────────────────────────────────
-// Cada pessoa passa a ter sua própria conta e sua própria lista de títulos.
-// A senha nunca é guardada em texto puro — só o hash gerado pelo bcrypt.
+// ── Login e cadastro ───────────────────────────────────────────────────────────
+// Cada pessoa tem a própria conta e a própria lista. A senha nunca é
+// guardada do jeito que a pessoa digitou — só uma versão criptografada dela
+// (isso é o que o bcrypt faz).
 app.post("/auth/registrar", async (req, res) => {
     try {
         const { nome, email, senha } = req.body;
@@ -198,9 +197,9 @@ app.post("/auth/login", async (req, res) => {
     }
 });
 
-// ── Rotas de títulos (todas exigem login, a partir daqui) ───────────────────
-// A partir deste ponto, toda rota abaixo passa pelo middleware "autenticar" e
-// só enxerga/edita os títulos que pertencem à pessoa logada (req.usuarioId).
+// ── Rotas dos títulos (só funcionam pra quem está logado) ────────────────────
+// Toda rota abaixo passa primeiro pelo "autenticar", que confere o login.
+// Assim, cada uma só mexe nos títulos da pessoa que está logada.
 app.get("/titulos", autenticar, async (req, res) => {
     try {
         const { tipo, busca } = req.query;
@@ -215,9 +214,9 @@ app.get("/titulos", autenticar, async (req, res) => {
 
         const titulos = await Titulo.find(filtro);
 
-        // Compatibilidade: títulos cadastrados antes da URL limpa (/detalhe/<código>)
-        // ainda não têm "codigoUrl" — gera e salva um na primeira vez que
-        // aparecerem, pra não quebrar o link na lista.
+        // Títulos cadastrados antes de existir a URL limpa ainda não têm
+        // esse código — aqui a gente cria um pra eles na primeira vez que
+        // aparecem, pra o link continuar funcionando.
         for (const titulo of titulos) {
             if (!titulo.codigoUrl) {
                 titulo.codigoUrl = await gerarCodigoUrlUnico();
@@ -231,9 +230,9 @@ app.get("/titulos", autenticar, async (req, res) => {
     }
 });
 
-// ── Buscar um único título (usado pela página de detalhes) ───────────────────
-// Busca pelo "codigoUrl" (o código curto que aparece na URL), não pelo _id
-// real do MongoDB — assim a URL não expõe o identificador interno do banco.
+// ── Busca um único título (usado na página de detalhes) ──────────────────────
+// Busca pelo código curto que aparece na URL, não pelo id real do banco de
+// dados — assim a URL não mostra esse identificador interno.
 app.get("/titulos/:id", autenticar, async (req, res) => {
     try {
         const titulo = await Titulo.findOne({ codigoUrl: req.params.id, usuarioId: req.usuarioId });
@@ -314,7 +313,7 @@ app.put("/titulos/:id", autenticar, async (req, res) => {
     }
 });
 
-// ── Marcar/desmarcar favorito (pode ter vários ao mesmo tempo) ────────────────
+// ── Marcar ou desmarcar como favorito (pode favoritar quantos quiser) ────────
 app.patch("/titulos/:id/favorito", autenticar, async (req, res) => {
     try {
         const atualizado = await Titulo.findOneAndUpdate(
@@ -342,14 +341,15 @@ app.delete("/titulos/:id", autenticar, async (req, res) => {
     }
 });
 
-// Exporta o app para os testes (sem chamar listen aqui)
+// Exporta o app pros testes usarem (sem ligar o servidor aqui)
 module.exports = app;
 
-// Só sobe o servidor se for chamado diretamente
+// Só liga o servidor quando o arquivo é executado direto (os testes
+// importam o app sem passar por aqui)
 if (require.main === module) {
-    // MONGODB_URI vem do .env (ou das variáveis de ambiente do serviço de
-    // hospedagem, ex: Render). Sem ela, cai no MongoDB local — mantém o
-    // fluxo de desenvolvimento de sempre funcionando sem configurar nada.
+    // O endereço do banco de dados vem do .env (ou das variáveis do
+    // Render, em produção). Sem isso configurado, usa o MongoDB do seu
+    // computador mesmo.
     const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017/cinenote";
     const porta    = process.env.PORT || 3000;
 

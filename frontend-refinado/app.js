@@ -1,22 +1,19 @@
-// ── Configuração da API ────────────────────────────────────────────────────────
-// Quando a página é aberta direto do disco (file://), assume que o backend
-// está rodando local na porta 3000 — fluxo de desenvolvimento de sempre.
-// Quando a página é servida pelo próprio backend (produção, ex: Render, já
-// que o Express também serve esses arquivos estáticos), usa a mesma origem
-// — não precisa trocar essa URL manualmente ao hospedar.
+// ── Endereço da API ────────────────────────────────────────────────────────────
+// Se a página for aberta direto do computador (arquivo local), usa o
+// servidor rodando em localhost. Se estiver hospedada (como no Render), usa
+// o mesmo endereço do site — não precisa trocar nada na mão.
 const API_URL = location.protocol === "file:" ? "http://localhost:3000" : "";
 
-// Link para a página de detalhes: URL limpa ("/detalhe/<id>") quando servido
-// pelo backend (produção ou "npm start" local); formato antigo com "?id="
-// quando o arquivo é aberto direto do disco (file://), já que aí não existe
-// servidor pra entender a rota "/detalhe/<id>".
+// Monta o link da página de detalhes: URL bonita ("/detalhe/<código>")
+// quando o site está rodando num servidor; formato antigo ("?id=...")
+// quando o arquivo é aberto direto do computador, sem servidor por trás.
 function linkDetalhe(id) {
     return location.protocol === "file:" ? `detalhe.html?id=${id}` : `/detalhe/${id}`;
 }
 
-// ── Sessão / login ─────────────────────────────────────────────────────────────
-// Cada pessoa tem sua própria conta; sem um token salvo, não faz sentido
-// mostrar a lista (ela pertenceria a ninguém). Redireciona pra tela de login.
+// ── Login ──────────────────────────────────────────────────────────────────────
+// Cada pessoa tem a própria conta. Sem um login salvo, não tem lista pra
+// mostrar — então manda direto pra tela de entrar.
 const TOKEN_KEY = "cinenote_token";
 const NOME_KEY  = "cinenote_nome";
 const tokenSalvo = localStorage.getItem(TOKEN_KEY);
@@ -39,9 +36,9 @@ function cabecalhosAuth() {
     return { "Authorization": `Bearer ${localStorage.getItem(TOKEN_KEY)}` };
 }
 
-// Wrapper de fetch para as rotas que exigem login: já manda o token, e se o
-// servidor responder 401 (sessão expirada/inválida), manda de volta pro login
-// em vez de deixar a tela quebrada ou vazia sem explicação.
+// Uma versão do fetch que já manda o token de login junto. Se o servidor
+// disser que a sessão expirou, manda a pessoa de volta pra tela de entrar,
+// em vez de deixar a tela travada sem explicação.
 async function fetchAutenticado(url, opcoes = {}) {
     const resposta = await fetch(url, {
         ...opcoes,
@@ -58,10 +55,10 @@ async function fetchAutenticado(url, opcoes = {}) {
     return resposta;
 }
 
-// ── Autocomplete de filmes/séries (TMDb) ──────────────────────────────────────
-// Pôster, ano e detalhes (sinopse/gênero/diretor) escolhidos no autocomplete,
-// aguardando ser enviados junto do próximo "Salvar". Qualquer edição manual
-// no campo Título invalida a seleção.
+// ── Sugestões de filmes e séries ──────────────────────────────────────────────
+// Guarda o pôster, ano e outros detalhes da sugestão escolhida, até a
+// pessoa clicar em "Salvar". Se ela mudar o texto do título na mão, essa
+// seleção é descartada.
 let posterSelecionado = null;
 let anoSelecionado = null;
 let descricaoSelecionada = null;
@@ -138,9 +135,8 @@ function selecionarSugestao(s) {
     tmdbIdSelecionado = s.tmdbId || null;
     document.getElementById("sugestoes").innerHTML = "";
 
-    // Busca sinopse/gênero/diretor em segundo plano — não trava o formulário,
-    // só preenche esses campos quando a resposta chegar (o usuário ainda
-    // está escolhendo nota/status nesse meio-tempo).
+    // Busca sinopse, gênero e diretor por trás dos panos — não trava o
+    // formulário, só preenche esses campos quando a resposta chegar.
     descricaoSelecionada = null;
     generoSelecionado = null;
     diretorSelecionado = null;
@@ -150,11 +146,11 @@ function selecionarSugestao(s) {
     }
 }
 
-// ── Preenchimento automático quando o título é digitado sem usar o
-// autocomplete (ex: a pessoa digita o nome inteiro e aperta Salvar direto).
-// Faz a mesma busca que o autocomplete faria, usando o texto já digitado,
-// e só aplica o resultado se casar exatamente com o título — evita colar
-// pôster/sinopse de um filme errado num título parecido mas diferente.
+// ── Preenchimento automático sem usar as sugestões ───────────────────────────
+// Se a pessoa digitar o nome inteiro e clicar direto em Salvar (sem
+// escolher uma sugestão), faz essa busca por trás dos panos e só usa o
+// resultado se o nome bater exatamente — assim não gruda o pôster de um
+// filme errado.
 async function tentarPreencherAutomaticamente(titulo, tipo) {
     try {
         const resposta  = await fetch(`${API_URL}/buscar-filme?q=${encodeURIComponent(titulo)}`);
@@ -175,8 +171,8 @@ async function tentarPreencherAutomaticamente(titulo, tipo) {
             await buscarDetalhesFilme(correspondencia.tmdbId, correspondencia.tipo);
         }
     } catch (err) {
-        // Preenchimento automático é complementar — se falhar, o título
-        // ainda é salvo normalmente, só sem pôster/sinopse/gênero/diretor.
+        // Isso é só um extra — se falhar, o título ainda é salvo
+        // normalmente, só sem pôster e sinopse.
     }
 }
 
@@ -188,12 +184,12 @@ async function buscarDetalhesFilme(tmdbId, tipo) {
         generoSelecionado    = dados.genero || null;
         diretorSelecionado   = dados.diretor || null;
     } catch (err) {
-        // Sinopse/gênero/diretor são complementares — se falhar, o título
-        // ainda pode ser salvo normalmente, só sem essas informações extras.
+        // Também é só um extra — se falhar, o título é salvo do mesmo
+        // jeito, só sem essas informações a mais.
     }
 }
 
-// ── Ordenação da lista (aplicada no cliente, depois do filtro/busca) ─────────
+// ── Ordena a lista (feito aqui no navegador, depois do filtro e da busca) ────
 function ordenarTitulos(dados, criterio) {
     const lista = [...dados];
 
@@ -211,7 +207,7 @@ function ordenarTitulos(dados, criterio) {
     }
 }
 
-// ── Listar títulos (com filtro, busca e ordenação) ───────────────────────────
+// ── Mostra a lista de títulos (com filtro, busca e ordenação) ────────────────
 async function listarTitulos() {
     const busca = document.getElementById("busca").value;
     const tipo  = document.getElementById("filtroTipo").value;
@@ -228,9 +224,9 @@ async function listarTitulos() {
 
         atualizarStats(dados);
 
-        // Favoritar é "fixar em destaque", não mover: o título continua
-        // aparecendo normalmente aqui embaixo (com editar/excluir/filtro),
-        // só ganha também uma cópia no carrossel de destaque acima.
+        // Favoritar não tira o título da lista — ele continua aparecendo
+        // normalmente aqui embaixo, só ganha também uma cópia lá em cima,
+        // no carrossel de destaque.
         renderizarDestaque(dados.filter(t => t.favorito));
 
         const lista = document.getElementById("lista");
@@ -303,7 +299,7 @@ async function listarTitulos() {
 
             lista.appendChild(card);
 
-            // Eventos via addEventListener — sem onclick inline
+            // Liga os cliques dos botões (sem usar onclick direto no HTML)
             card.querySelector(".btn-favorito").addEventListener("click", (e) => {
                 const jaFavorito = e.currentTarget.dataset.favorito === "true";
                 marcarFavorito(e.currentTarget.dataset.id, !jaFavorito);
@@ -400,8 +396,8 @@ async function marcarFavorito(id, valor) {
         carrossel.classList.remove("arrastando");
     });
 
-    // Clique nos botões (remover dos favoritos) logo após um arraste é ignorado,
-    // pra não remover sem querer enquanto o usuário só está navegando no carrossel.
+    // Ignora o clique se a pessoa acabou de arrastar o carrossel — assim
+    // não remove um favorito sem querer só por estar navegando.
     carrossel.addEventListener("click", (e) => {
         if (arrastou) {
             e.stopPropagation();
@@ -458,9 +454,8 @@ async function adicionar() {
         btn.disabled = true;
         btn.textContent = "Salvando...";
 
-        // Se o título foi digitado à mão (sem escolher uma sugestão do
-        // autocomplete), tenta preencher pôster/ano/sinopse/gênero/diretor
-        // automaticamente antes de salvar.
+        // Se a pessoa digitou o título na mão (sem escolher uma sugestão),
+        // tenta preencher pôster, ano e sinopse sozinho antes de salvar.
         if (!tmdbIdSelecionado) {
             await tentarPreencherAutomaticamente(titulo, tipo);
         }
