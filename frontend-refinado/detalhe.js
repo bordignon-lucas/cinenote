@@ -9,7 +9,7 @@ const NOME_KEY  = "cinenote_nome";
 const tokenSalvo = localStorage.getItem(TOKEN_KEY);
 
 if (!tokenSalvo) {
-    window.location.href = "login.html";
+    window.location.href = location.protocol === "file:" ? "login.html" : "/login.html";
 }
 
 function cabecalhosAuth() {
@@ -25,7 +25,7 @@ async function fetchAutenticado(url, opcoes = {}) {
     if (resposta.status === 401) {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(NOME_KEY);
-        window.location.href = "login.html";
+        window.location.href = location.protocol === "file:" ? "login.html" : "/login.html";
         throw new Error("Sessão expirada.");
     }
 
