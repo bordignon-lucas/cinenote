@@ -6,7 +6,7 @@ const NOME_KEY  = "cinenote_nome";
 
 // Se já tiver uma sessão salva, não faz sentido mostrar a tela de login de novo.
 if (localStorage.getItem(TOKEN_KEY)) {
-    window.location.href = "index.html";
+    window.location.href = "/";
 }
 
 const abaEntrar  = document.getElementById("aba-entrar");
@@ -56,7 +56,7 @@ formEntrar.addEventListener("submit", async (e) => {
 
         localStorage.setItem(TOKEN_KEY, dados.token);
         localStorage.setItem(NOME_KEY, dados.nome);
-        window.location.href = "index.html";
+        window.location.href = "/";
     } catch (err) {
         erro.textContent = "Erro ao conectar com o servidor. Verifique se ele está rodando.";
         erro.hidden = false;
@@ -102,7 +102,7 @@ formCriar.addEventListener("submit", async (e) => {
 
         localStorage.setItem(TOKEN_KEY, dados.token);
         localStorage.setItem(NOME_KEY, dados.nome);
-        window.location.href = "index.html";
+        window.location.href = "/";
     } catch (err) {
         erro.textContent = "Erro ao conectar com o servidor. Verifique se ele está rodando.";
         erro.hidden = false;

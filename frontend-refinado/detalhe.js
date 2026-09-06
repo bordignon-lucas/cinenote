@@ -198,7 +198,7 @@ function renderizarDetalhe(titulo) {
         }
         try {
             await fetchAutenticado(`${API_URL}/titulos/${titulo._id}`, { method: "DELETE" });
-            window.location.href = "index.html";
+            window.location.href = "/";
         } catch (err) {
             alert("Erro ao conectar com o servidor. Verifique se ele está rodando.");
         }
