@@ -770,3 +770,124 @@ button:disabled {
         justify-content: center;
     }
 }
+
+/* ── Cabeçalho com usuário logado / sair ────────────────────────────────────── */
+.header-app {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.header-usuario {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.header-usuario #nome-usuario {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.btn-sair {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    font-size: 0.8rem;
+}
+
+.btn-sair:hover {
+    border-color: var(--red-soft);
+    color: var(--red-soft);
+}
+
+/* ── Tela de login / criar conta ────────────────────────────────────────────── */
+body.pagina-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.login-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+}
+
+.login-titulo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--primary);
+    text-shadow: 0 0 30px var(--primary-glow);
+}
+
+.login-subtitulo {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 8px;
+    margin-bottom: 28px;
+}
+
+.login-abas {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.login-aba {
+    flex: 1;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    border-radius: 0;
+    padding: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.login-aba.ativa {
+    background: var(--primary);
+    color: #fff;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: left;
+}
+
+.login-form .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.btn-login {
+    background: var(--primary);
+    color: #fff;
+    padding: 12px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.btn-login:hover {
+    background: var(--primary-hover);
+}
+
+.login-erro {
+    color: var(--red-soft);
+    font-size: 0.82rem;
+}

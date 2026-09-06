@@ -6,6 +6,50 @@
 // — não precisa trocar essa URL manualmente ao hospedar.
 const API_URL = location.protocol === "file:" ? "http://localhost:3000" : "";
 
+// ── Sessão / login ─────────────────────────────────────────────────────────────
+// Cada pessoa tem sua própria conta; sem um token salvo, não faz sentido
+// mostrar a lista (ela pertenceria a ninguém). Redireciona pra tela de login.
+const TOKEN_KEY = "cinenote_token";
+const NOME_KEY  = "cinenote_nome";
+const tokenSalvo = localStorage.getItem(TOKEN_KEY);
+
+if (!tokenSalvo) {
+    window.location.href = "login.html";
+}
+
+document.getElementById("nome-usuario").textContent = localStorage.getItem(NOME_KEY)
+    ? `Olá, ${localStorage.getItem(NOME_KEY)}`
+    : "";
+
+document.getElementById("btn-sair").addEventListener("click", () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(NOME_KEY);
+    window.location.href = "login.html";
+});
+
+function cabecalhosAuth() {
+    return { "Authorization": `Bearer ${localStorage.getItem(TOKEN_KEY)}` };
+}
+
+// Wrapper de fetch para as rotas que exigem login: já manda o token, e se o
+// servidor responder 401 (sessão expirada/inválida), manda de volta pro login
+// em vez de deixar a tela quebrada ou vazia sem explicação.
+async function fetchAutenticado(url, opcoes = {}) {
+    const resposta = await fetch(url, {
+        ...opcoes,
+        headers: { ...cabecalhosAuth(), ...(opcoes.headers || {}) }
+    });
+
+    if (resposta.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(NOME_KEY);
+        window.location.href = "login.html";
+        throw new Error("Sessão expirada.");
+    }
+
+    return resposta;
+}
+
 // ── Autocomplete de filmes/séries (TMDb) ──────────────────────────────────────
 // Pôster, ano e detalhes (sinopse/gênero/diretor) escolhidos no autocomplete,
 // aguardando ser enviados junto do próximo "Salvar". Qualquer edição manual
@@ -170,7 +214,7 @@ async function listarTitulos() {
     if (tipo)  params.append("tipo", tipo);
 
     try {
-        const resposta = await fetch(`${API_URL}/titulos?${params}`);
+        const resposta = await fetchAutenticado(`${API_URL}/titulos?${params}`);
         let dados = await resposta.json();
         dados = ordenarTitulos(dados, ordem);
 
@@ -309,7 +353,7 @@ function renderizarDestaque(favoritos) {
 
 async function marcarFavorito(id, valor) {
     try {
-        await fetch(`${API_URL}/titulos/${id}/favorito`, {
+        await fetchAutenticado(`${API_URL}/titulos/${id}/favorito`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ favorito: valor })
@@ -413,7 +457,7 @@ async function adicionar() {
             await tentarPreencherAutomaticamente(titulo, tipo);
         }
 
-        const resposta = await fetch(`${API_URL}/titulos`, {
+        const resposta = await fetchAutenticado(`${API_URL}/titulos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -486,7 +530,7 @@ async function salvarEdicao(id) {
         btn.disabled = true;
         btn.textContent = "Salvando...";
 
-        const resposta = await fetch(`${API_URL}/titulos/${id}`, {
+        const resposta = await fetchAutenticado(`${API_URL}/titulos/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ titulo, tipo, nota, status })
@@ -520,7 +564,7 @@ async function excluir(id) {
     }
 
     try {
-        await fetch(`${API_URL}/titulos/${id}`, { method: "DELETE" });
+        await fetchAutenticado(`${API_URL}/titulos/${id}`, { method: "DELETE" });
         listarTitulos();
     } catch (err) {
         alert("Erro ao conectar com o servidor. Verifique se ele está rodando.");
@@ -536,4 +580,6 @@ function formatarTexto(texto) {
         .join(" ");
 }
 
-listarTitulos();
+if (tokenSalvo) {
+    listarTitulos();
+}

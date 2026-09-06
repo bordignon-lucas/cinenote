@@ -1,13 +1,150 @@
 const request = require("supertest");
-const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 
-// ── Mock do modelo Titulo ─────────────────────────────────────────────────────
+// ── Mock dos modelos ──────────────────────────────────────────────────────────
 jest.mock("../models/Titulo");
-const Titulo = require("../models/Titulo");
+jest.mock("../models/Usuario");
+
+const Titulo  = require("../models/Titulo");
+const Usuario = require("../models/Usuario");
+const { JWT_SECRET } = require("../middleware/auth");
 const app = require("../server");
 
 afterEach(() => jest.clearAllMocks());
 afterAll(() => jest.restoreAllMocks());
+
+// ── Token válido para os testes que exigem login ─────────────────────────────
+// Todas as rotas de /titulos passaram a exigir autenticação: cada requisição
+// simula uma pessoa já logada (usuarioId "usr123"), assinado com o mesmo
+// segredo que o middleware usa para validar.
+const usuarioIdFalso = "usr123";
+const tokenValido = jwt.sign({ usuarioId: usuarioIdFalso }, JWT_SECRET);
+const cabecalhoAuth = { Authorization: `Bearer ${tokenValido}` };
+
+// ────────────────────────────────────────────────────────────────────────────
+// POST /auth/registrar
+// ────────────────────────────────────────────────────────────────────────────
+describe("POST /auth/registrar", () => {
+    test("deve criar uma conta com sucesso", async () => {
+        Usuario.findOne.mockResolvedValue(null);
+        Usuario.create.mockResolvedValue({ _id: "novoId", nome: "Lucas", email: "lucas@teste.com" });
+
+        const res = await request(app)
+            .post("/auth/registrar")
+            .send({ nome: "Lucas", email: "lucas@teste.com", senha: "123456" });
+
+        expect(res.status).toBe(201);
+        expect(res.body.token).toBeDefined();
+        expect(res.body.nome).toBe("Lucas");
+    });
+
+    test("deve rejeitar cadastro sem nome, e-mail ou senha", async () => {
+        const res = await request(app)
+            .post("/auth/registrar")
+            .send({ email: "lucas@teste.com", senha: "123456" });
+
+        expect(res.status).toBe(400);
+        expect(res.body.erro).toBeDefined();
+    });
+
+    test("deve rejeitar senha com menos de 6 caracteres", async () => {
+        const res = await request(app)
+            .post("/auth/registrar")
+            .send({ nome: "Lucas", email: "lucas@teste.com", senha: "123" });
+
+        expect(res.status).toBe(400);
+    });
+
+    test("deve rejeitar e-mail já cadastrado", async () => {
+        Usuario.findOne.mockResolvedValue({ _id: "existente", email: "lucas@teste.com" });
+
+        const res = await request(app)
+            .post("/auth/registrar")
+            .send({ nome: "Lucas", email: "lucas@teste.com", senha: "123456" });
+
+        expect(res.status).toBe(409);
+    });
+
+    test("deve retornar 500 em erro interno", async () => {
+        Usuario.findOne.mockRejectedValue(new Error("DB error"));
+
+        const res = await request(app)
+            .post("/auth/registrar")
+            .send({ nome: "Lucas", email: "lucas@teste.com", senha: "123456" });
+
+        expect(res.status).toBe(500);
+    });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// POST /auth/login
+// ────────────────────────────────────────────────────────────────────────────
+describe("POST /auth/login", () => {
+    test("deve entrar com sucesso quando e-mail e senha estão corretos", async () => {
+        const bcrypt = require("bcryptjs");
+        const senhaHash = await bcrypt.hash("123456", 10);
+        Usuario.findOne.mockResolvedValue({ _id: "usr123", nome: "Lucas", email: "lucas@teste.com", senhaHash });
+
+        const res = await request(app)
+            .post("/auth/login")
+            .send({ email: "lucas@teste.com", senha: "123456" });
+
+        expect(res.status).toBe(200);
+        expect(res.body.token).toBeDefined();
+    });
+
+    test("deve rejeitar login sem e-mail ou senha", async () => {
+        const res = await request(app).post("/auth/login").send({ email: "lucas@teste.com" });
+        expect(res.status).toBe(400);
+    });
+
+    test("deve rejeitar e-mail não cadastrado", async () => {
+        Usuario.findOne.mockResolvedValue(null);
+
+        const res = await request(app)
+            .post("/auth/login")
+            .send({ email: "naoexiste@teste.com", senha: "123456" });
+
+        expect(res.status).toBe(401);
+    });
+
+    test("deve rejeitar senha incorreta", async () => {
+        const bcrypt = require("bcryptjs");
+        const senhaHash = await bcrypt.hash("senhaCerta", 10);
+        Usuario.findOne.mockResolvedValue({ _id: "usr123", nome: "Lucas", email: "lucas@teste.com", senhaHash });
+
+        const res = await request(app)
+            .post("/auth/login")
+            .send({ email: "lucas@teste.com", senha: "senhaErrada" });
+
+        expect(res.status).toBe(401);
+    });
+
+    test("deve retornar 500 em erro interno", async () => {
+        Usuario.findOne.mockRejectedValue(new Error("DB error"));
+
+        const res = await request(app)
+            .post("/auth/login")
+            .send({ email: "lucas@teste.com", senha: "123456" });
+
+        expect(res.status).toBe(500);
+    });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Middleware de autenticação — protege as rotas de /titulos
+// ────────────────────────────────────────────────────────────────────────────
+describe("Proteção das rotas de títulos", () => {
+    test("deve rejeitar acesso sem token", async () => {
+        const res = await request(app).get("/titulos");
+        expect(res.status).toBe(401);
+    });
+
+    test("deve rejeitar acesso com token inválido", async () => {
+        const res = await request(app).get("/titulos").set("Authorization", "Bearer token-invalido");
+        expect(res.status).toBe(401);
+    });
+});
 
 // ────────────────────────────────────────────────────────────────────────────
 // POST /titulos
@@ -15,11 +152,11 @@ afterAll(() => jest.restoreAllMocks());
 describe("POST /titulos", () => {
     test("deve adicionar um título com sucesso", async () => {
         Titulo.findOne.mockResolvedValue(null);
-        Titulo.prototype.save = jest.fn().mockResolvedValue();
         Titulo.mockImplementation((data) => ({ ...data, _id: "abc123", save: jest.fn().mockResolvedValue() }));
 
         const res = await request(app)
             .post("/titulos")
+            .set(cabecalhoAuth)
             .send({ titulo: "Inception", tipo: "Filme", nota: 9, status: "Assistido" });
 
         expect(res.status).toBe(200);
@@ -29,6 +166,7 @@ describe("POST /titulos", () => {
     test("deve rejeitar nota maior que 10", async () => {
         const res = await request(app)
             .post("/titulos")
+            .set(cabecalhoAuth)
             .send({ titulo: "Teste", tipo: "Filme", nota: 11, status: "Assistido" });
 
         expect(res.status).toBe(400);
@@ -38,6 +176,7 @@ describe("POST /titulos", () => {
     test("deve rejeitar nota negativa", async () => {
         const res = await request(app)
             .post("/titulos")
+            .set(cabecalhoAuth)
             .send({ titulo: "Teste", tipo: "Filme", nota: -1, status: "Assistido" });
 
         expect(res.status).toBe(400);
@@ -47,6 +186,7 @@ describe("POST /titulos", () => {
     test("deve rejeitar nota NaN", async () => {
         const res = await request(app)
             .post("/titulos")
+            .set(cabecalhoAuth)
             .send({ titulo: "Teste", tipo: "Filme", nota: "abc", status: "Assistido" });
 
         expect(res.status).toBe(400);
@@ -57,6 +197,7 @@ describe("POST /titulos", () => {
 
         const res = await request(app)
             .post("/titulos")
+            .set(cabecalhoAuth)
             .send({ titulo: "Avatar", tipo: "Filme", nota: 8, status: "Assistido" });
 
         expect(res.status).toBe(409);
@@ -68,6 +209,7 @@ describe("POST /titulos", () => {
 
         const res = await request(app)
             .post("/titulos")
+            .set(cabecalhoAuth)
             .send({ titulo: "Teste", tipo: "Filme", nota: 8, status: "Assistido" });
 
         expect(res.status).toBe(500);
@@ -78,23 +220,26 @@ describe("POST /titulos", () => {
 // GET /titulos
 // ────────────────────────────────────────────────────────────────────────────
 describe("GET /titulos", () => {
-    test("deve listar todos os títulos", async () => {
+    test("deve listar os títulos da pessoa logada", async () => {
         const mock = [
             { _id: "1", titulo: "Inception", tipo: "Filme", nota: 9 },
             { _id: "2", titulo: "Breaking Bad", tipo: "Série", nota: 10 }
         ];
         Titulo.find.mockResolvedValue(mock);
 
-        const res = await request(app).get("/titulos");
+        const res = await request(app).get("/titulos").set(cabecalhoAuth);
 
         expect(res.status).toBe(200);
         expect(res.body.length).toBe(2);
+        expect(Titulo.find).toHaveBeenCalledWith(
+            expect.objectContaining({ usuarioId: usuarioIdFalso })
+        );
     });
 
     test("deve aplicar filtro por tipo", async () => {
         Titulo.find.mockResolvedValue([{ _id: "1", titulo: "Inception", tipo: "Filme", nota: 9 }]);
 
-        const res = await request(app).get("/titulos?tipo=Filme");
+        const res = await request(app).get("/titulos?tipo=Filme").set(cabecalhoAuth);
 
         expect(res.status).toBe(200);
         expect(Titulo.find).toHaveBeenCalledWith(
@@ -105,7 +250,7 @@ describe("GET /titulos", () => {
     test("deve aplicar filtro por busca", async () => {
         Titulo.find.mockResolvedValue([{ _id: "1", titulo: "Inception", tipo: "Filme", nota: 9 }]);
 
-        const res = await request(app).get("/titulos?busca=inc");
+        const res = await request(app).get("/titulos?busca=inc").set(cabecalhoAuth);
 
         expect(res.status).toBe(200);
         expect(Titulo.find).toHaveBeenCalledWith(
@@ -116,7 +261,7 @@ describe("GET /titulos", () => {
     test("deve retornar 500 em erro interno", async () => {
         Titulo.find.mockRejectedValue(new Error("DB error"));
 
-        const res = await request(app).get("/titulos");
+        const res = await request(app).get("/titulos").set(cabecalhoAuth);
         expect(res.status).toBe(500);
     });
 });
@@ -126,27 +271,27 @@ describe("GET /titulos", () => {
 // ────────────────────────────────────────────────────────────────────────────
 describe("GET /titulos/:id", () => {
     test("deve retornar um único título", async () => {
-        Titulo.findById.mockResolvedValue({ _id: "123", titulo: "Duna", tipo: "Filme", nota: 9 });
+        Titulo.findOne.mockResolvedValue({ _id: "123", titulo: "Duna", tipo: "Filme", nota: 9 });
 
-        const res = await request(app).get("/titulos/123");
+        const res = await request(app).get("/titulos/123").set(cabecalhoAuth);
 
         expect(res.status).toBe(200);
         expect(res.body.titulo).toBe("Duna");
     });
 
-    test("deve retornar 404 se o título não existir", async () => {
-        Titulo.findById.mockResolvedValue(null);
+    test("deve retornar 404 se o título não existir (ou não for da pessoa logada)", async () => {
+        Titulo.findOne.mockResolvedValue(null);
 
-        const res = await request(app).get("/titulos/000");
+        const res = await request(app).get("/titulos/000").set(cabecalhoAuth);
 
         expect(res.status).toBe(404);
         expect(res.body.erro).toBeDefined();
     });
 
     test("deve retornar 500 em erro interno", async () => {
-        Titulo.findById.mockRejectedValue(new Error("DB error"));
+        Titulo.findOne.mockRejectedValue(new Error("DB error"));
 
-        const res = await request(app).get("/titulos/123");
+        const res = await request(app).get("/titulos/123").set(cabecalhoAuth);
         expect(res.status).toBe(500);
     });
 });
@@ -157,10 +302,11 @@ describe("GET /titulos/:id", () => {
 describe("PUT /titulos/:id", () => {
     test("deve editar título com sucesso", async () => {
         Titulo.findOne.mockResolvedValue(null);
-        Titulo.findByIdAndUpdate.mockResolvedValue({ _id: "123", titulo: "Inception", nota: 10 });
+        Titulo.findOneAndUpdate.mockResolvedValue({ _id: "123", titulo: "Inception", nota: 10 });
 
         const res = await request(app)
             .put("/titulos/123")
+            .set(cabecalhoAuth)
             .send({ titulo: "Inception", tipo: "Filme", nota: 10, status: "Assistido" });
 
         expect(res.status).toBe(200);
@@ -170,6 +316,7 @@ describe("PUT /titulos/:id", () => {
     test("deve rejeitar nota inválida na edição", async () => {
         const res = await request(app)
             .put("/titulos/123")
+            .set(cabecalhoAuth)
             .send({ titulo: "Inception", tipo: "Filme", nota: 15, status: "Assistido" });
 
         expect(res.status).toBe(400);
@@ -180,9 +327,22 @@ describe("PUT /titulos/:id", () => {
 
         const res = await request(app)
             .put("/titulos/123")
+            .set(cabecalhoAuth)
             .send({ titulo: "Avatar", tipo: "Filme", nota: 8, status: "Assistido" });
 
         expect(res.status).toBe(409);
+    });
+
+    test("deve retornar 404 se o título não existir (ou não for da pessoa logada)", async () => {
+        Titulo.findOne.mockResolvedValue(null);
+        Titulo.findOneAndUpdate.mockResolvedValue(null);
+
+        const res = await request(app)
+            .put("/titulos/123")
+            .set(cabecalhoAuth)
+            .send({ titulo: "Inception", tipo: "Filme", nota: 9, status: "Assistido" });
+
+        expect(res.status).toBe(404);
     });
 
     test("deve retornar 500 em erro interno", async () => {
@@ -190,7 +350,47 @@ describe("PUT /titulos/:id", () => {
 
         const res = await request(app)
             .put("/titulos/123")
+            .set(cabecalhoAuth)
             .send({ titulo: "Inception", tipo: "Filme", nota: 9, status: "Assistido" });
+
+        expect(res.status).toBe(500);
+    });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// PATCH /titulos/:id/favorito
+// ────────────────────────────────────────────────────────────────────────────
+describe("PATCH /titulos/:id/favorito", () => {
+    test("deve marcar como favorito com sucesso", async () => {
+        Titulo.findOneAndUpdate.mockResolvedValue({ _id: "123", favorito: true });
+
+        const res = await request(app)
+            .patch("/titulos/123/favorito")
+            .set(cabecalhoAuth)
+            .send({ favorito: true });
+
+        expect(res.status).toBe(200);
+        expect(res.body.favorito).toBe(true);
+    });
+
+    test("deve retornar 404 se o título não existir (ou não for da pessoa logada)", async () => {
+        Titulo.findOneAndUpdate.mockResolvedValue(null);
+
+        const res = await request(app)
+            .patch("/titulos/000/favorito")
+            .set(cabecalhoAuth)
+            .send({ favorito: true });
+
+        expect(res.status).toBe(404);
+    });
+
+    test("deve retornar 500 em erro interno", async () => {
+        Titulo.findOneAndUpdate.mockRejectedValue(new Error("DB error"));
+
+        const res = await request(app)
+            .patch("/titulos/123/favorito")
+            .set(cabecalhoAuth)
+            .send({ favorito: true });
 
         expect(res.status).toBe(500);
     });
@@ -201,18 +401,18 @@ describe("PUT /titulos/:id", () => {
 // ────────────────────────────────────────────────────────────────────────────
 describe("DELETE /titulos/:id", () => {
     test("deve remover título com sucesso", async () => {
-        Titulo.findByIdAndDelete.mockResolvedValue({ _id: "123" });
+        Titulo.findOneAndDelete.mockResolvedValue({ _id: "123" });
 
-        const res = await request(app).delete("/titulos/123");
+        const res = await request(app).delete("/titulos/123").set(cabecalhoAuth);
 
         expect(res.status).toBe(200);
         expect(res.body.mensagem).toBe("Título removido");
     });
 
     test("deve retornar 500 em erro interno", async () => {
-        Titulo.findByIdAndDelete.mockRejectedValue(new Error("DB error"));
+        Titulo.findOneAndDelete.mockRejectedValue(new Error("DB error"));
 
-        const res = await request(app).delete("/titulos/123");
+        const res = await request(app).delete("/titulos/123").set(cabecalhoAuth);
         expect(res.status).toBe(500);
     });
 });

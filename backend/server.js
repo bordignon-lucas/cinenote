@@ -4,6 +4,8 @@ require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -17,6 +19,8 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "..", "frontend-refinado")));
 
 const Titulo = require("./models/Titulo");
+const Usuario = require("./models/Usuario");
+const { autenticar, JWT_SECRET } = require("./middleware/auth");
 
 function formatarTexto(texto) {
     if (!texto) return texto;
@@ -118,10 +122,68 @@ app.get("/detalhes-filme", async (req, res) => {
     }
 });
 
-app.get("/titulos", async (req, res) => {
+// ── Autenticação ──────────────────────────────────────────────────────────────
+// Cada pessoa passa a ter sua própria conta e sua própria lista de títulos.
+// A senha nunca é guardada em texto puro — só o hash gerado pelo bcrypt.
+app.post("/auth/registrar", async (req, res) => {
+    try {
+        const { nome, email, senha } = req.body;
+
+        if (!nome || !email || !senha) {
+            return res.status(400).json({ erro: "Nome, e-mail e senha são obrigatórios." });
+        }
+        if (senha.length < 6) {
+            return res.status(400).json({ erro: "A senha deve ter pelo menos 6 caracteres." });
+        }
+
+        const emailNormalizado = email.toLowerCase().trim();
+        const existente = await Usuario.findOne({ email: emailNormalizado });
+        if (existente) {
+            return res.status(409).json({ erro: "Já existe uma conta com esse e-mail." });
+        }
+
+        const senhaHash = await bcrypt.hash(senha, 10);
+        const usuario = await Usuario.create({ nome: nome.trim(), email: emailNormalizado, senhaHash });
+
+        const token = jwt.sign({ usuarioId: usuario._id }, JWT_SECRET, { expiresIn: "30d" });
+        res.status(201).json({ token, nome: usuario.nome, email: usuario.email });
+    } catch (err) {
+        res.status(500).json({ erro: "Erro ao criar conta." });
+    }
+});
+
+app.post("/auth/login", async (req, res) => {
+    try {
+        const { email, senha } = req.body;
+
+        if (!email || !senha) {
+            return res.status(400).json({ erro: "E-mail e senha são obrigatórios." });
+        }
+
+        const usuario = await Usuario.findOne({ email: email.toLowerCase().trim() });
+        if (!usuario) {
+            return res.status(401).json({ erro: "E-mail ou senha incorretos." });
+        }
+
+        const senhaCorreta = await bcrypt.compare(senha, usuario.senhaHash);
+        if (!senhaCorreta) {
+            return res.status(401).json({ erro: "E-mail ou senha incorretos." });
+        }
+
+        const token = jwt.sign({ usuarioId: usuario._id }, JWT_SECRET, { expiresIn: "30d" });
+        res.json({ token, nome: usuario.nome, email: usuario.email });
+    } catch (err) {
+        res.status(500).json({ erro: "Erro ao entrar." });
+    }
+});
+
+// ── Rotas de títulos (todas exigem login, a partir daqui) ───────────────────
+// A partir deste ponto, toda rota abaixo passa pelo middleware "autenticar" e
+// só enxerga/edita os títulos que pertencem à pessoa logada (req.usuarioId).
+app.get("/titulos", autenticar, async (req, res) => {
     try {
         const { tipo, busca } = req.query;
-        const filtro = {};
+        const filtro = { usuarioId: req.usuarioId };
 
         if (tipo && tipo !== "todos") {
             filtro.tipo = { $regex: `^${tipo}$`, $options: "i" };
@@ -138,9 +200,9 @@ app.get("/titulos", async (req, res) => {
 });
 
 // ── Buscar um único título (usado pela página de detalhes) ───────────────────
-app.get("/titulos/:id", async (req, res) => {
+app.get("/titulos/:id", autenticar, async (req, res) => {
     try {
-        const titulo = await Titulo.findById(req.params.id);
+        const titulo = await Titulo.findOne({ _id: req.params.id, usuarioId: req.usuarioId });
         if (!titulo) {
             return res.status(404).json({ erro: "Título não encontrado." });
         }
@@ -150,7 +212,7 @@ app.get("/titulos/:id", async (req, res) => {
     }
 });
 
-app.post("/titulos", async (req, res) => {
+app.post("/titulos", autenticar, async (req, res) => {
     try {
         if (!validarNota(req.body.nota)) {
             return res.status(400).json({ erro: "A nota deve ser um número entre 0 e 10." });
@@ -158,13 +220,14 @@ app.post("/titulos", async (req, res) => {
 
         const body = {
             ...req.body,
+            usuarioId: req.usuarioId,
             titulo: formatarTexto(req.body.titulo),
             tipo:   formatarTexto(req.body.tipo),
             nota:   parseFloat(req.body.nota),
             status: req.body.status || "Quero Assistir"
         };
 
-        const duplicado = await Titulo.findOne({ titulo: body.titulo });
+        const duplicado = await Titulo.findOne({ titulo: body.titulo, usuarioId: req.usuarioId });
         if (duplicado) {
             return res.status(409).json({ erro: `"${body.titulo}" já está cadastrado.` });
         }
@@ -177,7 +240,7 @@ app.post("/titulos", async (req, res) => {
     }
 });
 
-app.put("/titulos/:id", async (req, res) => {
+app.put("/titulos/:id", autenticar, async (req, res) => {
     try {
         if (!validarNota(req.body.nota)) {
             return res.status(400).json({ erro: "A nota deve ser um número entre 0 e 10." });
@@ -190,16 +253,25 @@ app.put("/titulos/:id", async (req, res) => {
             nota:   parseFloat(req.body.nota)
         };
 
-        const duplicado = await Titulo.findOne({ titulo: body.titulo, _id: { $ne: req.params.id } });
+        const duplicado = await Titulo.findOne({
+            titulo: body.titulo,
+            usuarioId: req.usuarioId,
+            _id: { $ne: req.params.id }
+        });
         if (duplicado) {
             return res.status(409).json({ erro: `"${body.titulo}" já está cadastrado.` });
         }
 
-        const atualizado = await Titulo.findByIdAndUpdate(
-            req.params.id,
+        const atualizado = await Titulo.findOneAndUpdate(
+            { _id: req.params.id, usuarioId: req.usuarioId },
             body,
             { new: true }
         );
+
+        if (!atualizado) {
+            return res.status(404).json({ erro: "Título não encontrado." });
+        }
+
         res.json(atualizado);
     } catch (err) {
         res.status(500).json({ erro: "Erro ao editar título." });
@@ -207,10 +279,10 @@ app.put("/titulos/:id", async (req, res) => {
 });
 
 // ── Marcar/desmarcar favorito (pode ter vários ao mesmo tempo) ────────────────
-app.patch("/titulos/:id/favorito", async (req, res) => {
+app.patch("/titulos/:id/favorito", autenticar, async (req, res) => {
     try {
-        const atualizado = await Titulo.findByIdAndUpdate(
-            req.params.id,
+        const atualizado = await Titulo.findOneAndUpdate(
+            { _id: req.params.id, usuarioId: req.usuarioId },
             { favorito: !!req.body.favorito },
             { new: true }
         );
@@ -225,9 +297,9 @@ app.patch("/titulos/:id/favorito", async (req, res) => {
     }
 });
 
-app.delete("/titulos/:id", async (req, res) => {
+app.delete("/titulos/:id", autenticar, async (req, res) => {
     try {
-        await Titulo.findByIdAndDelete(req.params.id);
+        await Titulo.findOneAndDelete({ _id: req.params.id, usuarioId: req.usuarioId });
         res.json({ mensagem: "Título removido" });
     } catch (err) {
         res.status(500).json({ erro: "Erro ao remover título." });

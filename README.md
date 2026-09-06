@@ -13,18 +13,24 @@ CineNote-completo/
 ├── docs/
 │   └── index.html        # página do GitHub Pages (sobre o projeto, funcionalidades, arquitetura)
 ├── backend/
-│   ├── server.js         # API Express (também serve o frontend-refinado como estático)
-│   ├── models/Titulo.js  # schema Mongoose
+│   ├── server.js             # API Express (também serve o frontend-refinado como estático)
+│   ├── models/
+│   │   ├── Titulo.js         # schema Mongoose (cada título pertence a um usuarioId)
+│   │   └── Usuario.js        # schema Mongoose (conta de cada pessoa)
+│   ├── middleware/
+│   │   └── auth.js           # valida o token de login (JWT) nas rotas protegidas
 │   └── tests/
-│       ├── server.test.js   # testes de API (supertest + mocks do model)
-│       └── app.test.js      # testes do front-end (jsdom, funções utilitárias)
+│       ├── server.test.js    # testes de API (supertest + mocks dos models)
+│       └── app.test.js       # testes do front-end (jsdom, funções utilitárias)
 ├── frontend/             # versão corrigida original
 │   ├── index.html
 │   ├── app.js
 │   └── style.css
-└── frontend-refinado/    # versão com melhorias de UX, autocomplete e página de detalhes
+└── frontend-refinado/    # versão com melhorias de UX, login e página de detalhes
     ├── index.html
     ├── app.js
+    ├── login.html        # tela de entrar / criar conta
+    ├── login.js
     ├── detalhe.html      # página de detalhes de um título (gênero, diretor, sinopse, comentário)
     ├── detalhe.js
     └── style.css
@@ -62,6 +68,31 @@ Para ativar:
 
 Sem a chave configurada, a rota simplesmente devolve uma lista vazia — o
 cadastro manual continua funcionando normalmente, só sem sugestões.
+
+## Login (cada pessoa com sua própria lista)
+
+O CineNote tem conta de usuário: cada pessoa cria um cadastro (nome, e-mail,
+senha) e só enxerga/edita os próprios títulos — não existe mais uma lista
+única compartilhada por todo mundo que acessa o link.
+
+Como funciona por baixo dos panos:
+
+1. `POST /auth/registrar` cria a conta (a senha é guardada com hash via
+   `bcryptjs`, nunca em texto puro) e já devolve um token de sessão (JWT).
+2. `POST /auth/login` confere e-mail/senha e devolve o mesmo tipo de token.
+3. O front-end guarda esse token no `localStorage` do navegador e manda ele
+   em todas as chamadas à API (cabeçalho `Authorization: Bearer <token>`).
+4. O backend usa esse token pra saber de quem é cada requisição
+   (`backend/middleware/auth.js`) e filtra os títulos pelo dono
+   (`usuarioId`) em todas as rotas de `/titulos`.
+5. Sem token válido, o front-end manda a pessoa de volta pra
+   `login.html` automaticamente.
+
+Isso precisa de uma variável extra, `JWT_SECRET` (veja `.env.example`) — uma
+string aleatória usada para assinar os tokens. Sem ela configurada, o
+servidor usa um valor padrão só para desenvolvimento local; **em produção
+(Render) é obrigatório configurar a sua própria**, senão qualquer pessoa que
+souber o valor padrão poderia forjar um token válido.
 
 ## Como rodar os testes
 
@@ -136,6 +167,10 @@ sensível é enviado.)
 4. Em **Environment Variables**, adicione:
    - `MONGODB_URI` → a connection string do Atlas (passo anterior)
    - `TMDB_API_KEY` → sua chave da TMDb (a mesma do `.env` local)
+   - `JWT_SECRET` → uma string aleatória própria de produção (dá pra gerar
+     com `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`),
+     usada para assinar os tokens de login — **não reaproveite** um valor de
+     teste/exemplo aqui.
 5. Clique em **Create Web Service**. O Render instala as dependências e
    inicia o servidor — a URL pública aparece no topo da página (algo como
    `https://cinenote.onrender.com`).
@@ -215,6 +250,9 @@ para substituir a versão original:
   nada parecido. Para títulos que já estavam cadastrados assim (de antes
   dessa mudança), a página de detalhes mostra um botão "🔍 Buscar
   informações na TMDb" que faz essa mesma busca a qualquer momento.
+- Login e conta individual: cada pessoa cria a própria conta
+  (`login.html`) e só vê os próprios títulos — ver seção "Login" acima
+  para os detalhes técnicos.
 
 Essas mudanças também acrescentaram, no backend compartilhado:
 
@@ -222,9 +260,17 @@ Essas mudanças também acrescentaram, no backend compartilhado:
   `tmdbId` de cada sugestão);
 - rota `GET /detalhes-filme` (proxy para a TMDb: sinopse, gênero e diretor
   de um título específico, buscado uma vez no momento da seleção);
-- rota `GET /titulos/:id` (busca um único título, usada pela página de
-  detalhes);
+- rota `POST /auth/registrar` (cria a conta e devolve o token de sessão);
+- rota `POST /auth/login` (confere e-mail/senha e devolve o token);
+- rota `GET /titulos/:id` (busca um único título da pessoa logada, usada
+  pela página de detalhes);
 - rota `PATCH /titulos/:id/favorito` (marca/desmarca favorito);
+- todas as rotas de `/titulos` agora exigem login (cabeçalho
+  `Authorization: Bearer <token>`) e só enxergam os títulos da pessoa
+  logada;
+- campo `usuarioId` no model `Titulo` (dono do título, usado para filtrar
+  a lista de cada pessoa);
+- model `Usuario` (nome, e-mail único, senha guardada como hash);
 - campo `poster` no model `Titulo` (opcional, `null` se não vier de nenhuma
   sugestão);
 - campo `ano` no model `Titulo` (string com o ano de lançamento, `null` se
@@ -235,8 +281,8 @@ Essas mudanças também acrescentaram, no backend compartilhado:
 - campo `comentario` no model `Titulo` (texto livre, editável na página de
   detalhes).
 
-Os 41 testes automatizados continuam passando normalmente (38 originais +
-3 novos para a rota `GET /titulos/:id`).
+Os 57 testes automatizados continuam passando normalmente (41 anteriores +
+16 novos para cadastro/login e proteção das rotas de títulos).
 
 ## O que ficou de fora (não copiado)
 

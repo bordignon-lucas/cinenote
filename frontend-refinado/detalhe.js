@@ -3,6 +3,35 @@
 // pelo próprio backend (produção) usa a mesma origem.
 const API_URL = location.protocol === "file:" ? "http://localhost:3000" : "";
 
+// ── Sessão / login ─────────────────────────────────────────────────────────────
+const TOKEN_KEY = "cinenote_token";
+const NOME_KEY  = "cinenote_nome";
+const tokenSalvo = localStorage.getItem(TOKEN_KEY);
+
+if (!tokenSalvo) {
+    window.location.href = "login.html";
+}
+
+function cabecalhosAuth() {
+    return { "Authorization": `Bearer ${localStorage.getItem(TOKEN_KEY)}` };
+}
+
+async function fetchAutenticado(url, opcoes = {}) {
+    const resposta = await fetch(url, {
+        ...opcoes,
+        headers: { ...cabecalhosAuth(), ...(opcoes.headers || {}) }
+    });
+
+    if (resposta.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(NOME_KEY);
+        window.location.href = "login.html";
+        throw new Error("Sessão expirada.");
+    }
+
+    return resposta;
+}
+
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
 
@@ -16,7 +45,7 @@ async function carregarDetalhe() {
     }
 
     try {
-        const resposta = await fetch(`${API_URL}/titulos/${id}`);
+        const resposta = await fetchAutenticado(`${API_URL}/titulos/${id}`);
 
         if (resposta.status === 404) {
             secao.innerHTML = `<p class="msg-vazia">Título não encontrado.</p>`;
@@ -132,7 +161,7 @@ function renderizarDetalhe(titulo) {
                     diretor: detalhes.diretor
                 };
 
-                await fetch(`${API_URL}/titulos/${titulo._id}`, {
+                await fetchAutenticado(`${API_URL}/titulos/${titulo._id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(atualizacao)
@@ -151,7 +180,7 @@ function renderizarDetalhe(titulo) {
     document.getElementById("btn-favorito-detalhe").addEventListener("click", async () => {
         const novoValor = !titulo.favorito;
         try {
-            await fetch(`${API_URL}/titulos/${titulo._id}/favorito`, {
+            await fetchAutenticado(`${API_URL}/titulos/${titulo._id}/favorito`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ favorito: novoValor })
@@ -168,7 +197,7 @@ function renderizarDetalhe(titulo) {
             return;
         }
         try {
-            await fetch(`${API_URL}/titulos/${titulo._id}`, { method: "DELETE" });
+            await fetchAutenticado(`${API_URL}/titulos/${titulo._id}`, { method: "DELETE" });
             window.location.href = "index.html";
         } catch (err) {
             alert("Erro ao conectar com o servidor. Verifique se ele está rodando.");
@@ -184,7 +213,7 @@ function renderizarDetalhe(titulo) {
         btn.textContent = "Salvando...";
 
         try {
-            await fetch(`${API_URL}/titulos/${titulo._id}`, {
+            await fetchAutenticado(`${API_URL}/titulos/${titulo._id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -207,4 +236,6 @@ function renderizarDetalhe(titulo) {
     });
 }
 
-carregarDetalhe();
+if (tokenSalvo) {
+    carregarDetalhe();
+}
