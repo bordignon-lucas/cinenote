@@ -198,6 +198,9 @@ footer {
     .lista-features { grid-template-columns: 1fr; }
     .diagrama { flex-direction: column; }
     .seta { transform: rotate(90deg); }
+    /* A seta "↓" já aponta pra baixo — sem essa exceção, a regra acima gira
+       ela de novo e ela acaba apontando de lado por engano. */
+    .seta-baixo { transform: none; }
 }
 </style>
 </head>
@@ -205,11 +208,11 @@ footer {
 
 <header>
     <h1>CineNote</h1>
-    <p>Um watchlist de filmes e séries: cadastre títulos, dê nota, marque favoritos
-    e acompanhe o que já assistiu — com autocomplete de filmes e séries via TMDb.</p>
+    <p>Uma lista pessoal de filmes e séries: cadastre o que você já assistiu ou
+    ainda quer assistir, dê uma nota, marque favoritos — e cada pessoa tem a
+    própria lista, só sua.</p>
     <div class="links">
         <a class="link-principal" href="https://cinenote-brda.onrender.com" target="_blank" rel="noopener">Acessar a aplicação</a>
-        <a class="link-secundario" href="https://github.com/bordignon-lucas/cinenote" target="_blank" rel="noopener">Ver código no GitHub</a>
     </div>
 </header>
 
@@ -218,44 +221,45 @@ footer {
     <section class="secao">
         <h2>Sobre o projeto</h2>
         <p>
-            CineNote é um projeto acadêmico desenvolvido ao longo das disciplinas de
-            Extensão, com o objetivo de aplicar, na prática, o desenvolvimento de uma
-            aplicação web completa: front-end, backend com API REST, banco de dados,
-            testes automatizados e hospedagem em produção.
+            CineNote é um projeto acadêmico feito para a disciplina de Extensão.
+            A ideia foi construir, na prática, um site completo: uma tela para o
+            usuário usar, um sistema por trás que guarda as informações com
+            segurança, e testes automáticos para garantir que tudo continua
+            funcionando a cada mudança.
         </p>
     </section>
 
     <section class="secao">
-        <h2>Funcionalidades</h2>
+        <h2>O que dá para fazer</h2>
         <ul class="lista-features">
-            <li>Conta individual: cada pessoa vê só os próprios títulos</li>
-            <li>Cadastro de filmes e séries com nota, tipo e status</li>
-            <li>Autocomplete de títulos com pôster, via API da TMDb</li>
-            <li>Ano de lançamento, gênero e diretor preenchidos automaticamente</li>
-            <li>Favoritos em carrossel arrastável, mantidos também na lista</li>
-            <li>Ordenação por nome ou ano, e busca por nome</li>
-            <li>Página de detalhes com sinopse e comentário pessoal</li>
-            <li>Edição e exclusão com confirmação</li>
-            <li>Testes automatizados (Jest + Supertest)</li>
+            <li>Criar uma conta e ver só a própria lista de filmes e séries</li>
+            <li>Cadastrar títulos com nota, tipo e status (assistido ou não)</li>
+            <li>Buscar o filme ou série pelo nome e já trazer o pôster automaticamente</li>
+            <li>Ano, gênero e diretor preenchidos sozinhos, sem digitar nada a mais</li>
+            <li>Marcar favoritos, que aparecem em destaque no topo da lista</li>
+            <li>Ordenar a lista por nome ou por ano, e buscar por nome</li>
+            <li>Abrir cada título numa página própria, com sinopse e um espaço para anotações pessoais</li>
+            <li>Editar ou excluir qualquer título, com confirmação antes de apagar</li>
+            <li>Testes automáticos que checam se tudo continua funcionando certinho</li>
         </ul>
     </section>
 
     <section class="secao">
-        <h2>Arquitetura</h2>
+        <h2>Como o sistema funciona por trás</h2>
         <div class="diagrama">
             <div class="caixa">
-                <strong>Front-end</strong>
-                <span>HTML, CSS e JavaScript</span>
+                <strong>Tela do usuário</strong>
+                <span>Onde você usa o site</span>
             </div>
             <div class="seta">→</div>
             <div class="caixa destaque">
-                <strong>Backend</strong>
-                <span>Node.js + Express</span>
+                <strong>Servidor</strong>
+                <span>Organiza os pedidos</span>
             </div>
             <div class="seta">→</div>
             <div class="caixa">
-                <strong>MongoDB Atlas</strong>
-                <span>Banco de dados</span>
+                <strong>Banco de dados</strong>
+                <span>Guarda as informações</span>
             </div>
         </div>
         <div class="diagrama" style="padding-top: 0;">
@@ -263,14 +267,14 @@ footer {
         </div>
         <div class="diagrama" style="padding-top: 0;">
             <div class="caixa">
-                <strong>TMDb API</strong>
+                <strong>Serviço externo (TMDb)</strong>
                 <span>Sinopse, pôster, gênero e diretor</span>
             </div>
         </div>
     </section>
 
     <section class="secao">
-        <h2>Tecnologias</h2>
+        <h2>Tecnologias usadas (para quem curte o lado técnico)</h2>
         <div class="stack">
             <span>Node.js</span>
             <span>Express</span>
