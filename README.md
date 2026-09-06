@@ -262,8 +262,11 @@ Essas mudanças também acrescentaram, no backend compartilhado:
   de um título específico, buscado uma vez no momento da seleção);
 - rota `POST /auth/registrar` (cria a conta e devolve o token de sessão);
 - rota `POST /auth/login` (confere e-mail/senha e devolve o token);
-- rota `GET /titulos/:id` (busca um único título da pessoa logada, usada
-  pela página de detalhes);
+- rota `GET /detalhe/:codigo` (serve a página de detalhes com URL limpa, ex:
+  `/detalhe/1kGeNAKl`, em vez de `/detalhe.html?id=...`);
+- rota `GET /titulos/:id` (busca um único título da pessoa logada pelo
+  `codigoUrl`, usada pela página de detalhes — não é mais buscado pelo `_id`
+  real do MongoDB, para não expor o identificador interno do banco na URL);
 - rota `PATCH /titulos/:id/favorito` (marca/desmarca favorito);
 - todas as rotas de `/titulos` agora exigem login (cabeçalho
   `Authorization: Bearer <token>`) e só enxergam os títulos da pessoa
@@ -279,10 +282,15 @@ Essas mudanças também acrescentaram, no backend compartilhado:
 - campos `descricao`, `genero` e `diretor` no model `Titulo` (vêm da TMDb,
   `null` se o título foi cadastrado manualmente);
 - campo `comentario` no model `Titulo` (texto livre, editável na página de
-  detalhes).
+  detalhes);
+- campo `codigoUrl` no model `Titulo` (código curto e aleatório, gerado ao
+  cadastrar, usado só na URL da página de detalhes — títulos cadastrados
+  antes dessa mudança recebem um automaticamente na primeira vez que a
+  lista é carregada).
 
-Os 57 testes automatizados continuam passando normalmente (41 anteriores +
-16 novos para cadastro/login e proteção das rotas de títulos).
+Os 59 testes automatizados continuam passando normalmente (41 anteriores +
+18 novos para cadastro/login, proteção das rotas de títulos e a URL limpa
+da página de detalhes).
 
 ## O que ficou de fora (não copiado)
 

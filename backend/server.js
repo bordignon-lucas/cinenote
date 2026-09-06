@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const app = express();
 
@@ -36,6 +37,19 @@ function formatarTexto(texto) {
         .split(" ")
         .map(p => p.charAt(0).toUpperCase() + p.slice(1))
         .join(" ");
+}
+
+// Gera um código curto e aleatório (8 caracteres) para usar na URL da
+// página de detalhes, em vez do _id real do MongoDB. Confere se já existe
+// um título com esse código antes de devolver (colisão é extremamente rara,
+// mas mais vale garantir).
+async function gerarCodigoUrlUnico() {
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+        const codigo = crypto.randomBytes(6).toString("base64url");
+        const existente = await Titulo.findOne({ codigoUrl: codigo });
+        if (!existente) return codigo;
+    }
+    return crypto.randomBytes(8).toString("base64url");
 }
 
 function validarNota(nota) {
@@ -200,6 +214,17 @@ app.get("/titulos", autenticar, async (req, res) => {
         }
 
         const titulos = await Titulo.find(filtro);
+
+        // Compatibilidade: títulos cadastrados antes da URL limpa (/detalhe/<código>)
+        // ainda não têm "codigoUrl" — gera e salva um na primeira vez que
+        // aparecerem, pra não quebrar o link na lista.
+        for (const titulo of titulos) {
+            if (!titulo.codigoUrl) {
+                titulo.codigoUrl = await gerarCodigoUrlUnico();
+                await titulo.save();
+            }
+        }
+
         res.json(titulos);
     } catch (err) {
         res.status(500).json({ erro: "Erro ao buscar títulos." });
@@ -207,9 +232,11 @@ app.get("/titulos", autenticar, async (req, res) => {
 });
 
 // ── Buscar um único título (usado pela página de detalhes) ───────────────────
+// Busca pelo "codigoUrl" (o código curto que aparece na URL), não pelo _id
+// real do MongoDB — assim a URL não expõe o identificador interno do banco.
 app.get("/titulos/:id", autenticar, async (req, res) => {
     try {
-        const titulo = await Titulo.findOne({ _id: req.params.id, usuarioId: req.usuarioId });
+        const titulo = await Titulo.findOne({ codigoUrl: req.params.id, usuarioId: req.usuarioId });
         if (!titulo) {
             return res.status(404).json({ erro: "Título não encontrado." });
         }
@@ -238,6 +265,8 @@ app.post("/titulos", autenticar, async (req, res) => {
         if (duplicado) {
             return res.status(409).json({ erro: `"${body.titulo}" já está cadastrado.` });
         }
+
+        body.codigoUrl = await gerarCodigoUrlUnico();
 
         const novoTitulo = new Titulo(body);
         await novoTitulo.save();

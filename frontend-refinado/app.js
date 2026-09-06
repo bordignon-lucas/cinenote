@@ -254,7 +254,7 @@ async function listarTitulos() {
                 ${titulo.poster
                     ? `<img class="card-poster" src="${titulo.poster}" alt="">`
                     : `<div class="card-poster card-poster-vazio">🎬</div>`}
-                <span class="card-titulo"><a href="${linkDetalhe(titulo._id)}">${titulo.titulo}</a>${titulo.ano ? ` <span class="card-ano">(${titulo.ano})</span>` : ""}</span>
+                <span class="card-titulo"><a href="${linkDetalhe(titulo.codigoUrl || titulo._id)}">${titulo.titulo}</a>${titulo.ano ? ` <span class="card-ano">(${titulo.ano})</span>` : ""}</span>
                 <span class="badge-tipo">${titulo.tipo}</span>
                 <span class="badge-nota">${titulo.nota}</span>
                 <span class="badge-status ${statusClasse}">${status}</span>
@@ -350,7 +350,7 @@ function renderizarDestaque(favoritos) {
                 : `<div class="favorito-poster-vazio">🎬</div>`}
             <button class="btn-remover-favorito-mini" data-id="${titulo._id}" title="Remover dos favoritos">★</button>
             <div class="favorito-card-info">
-                <span class="favorito-card-titulo"><a href="${linkDetalhe(titulo._id)}">${titulo.titulo}</a></span>
+                <span class="favorito-card-titulo"><a href="${linkDetalhe(titulo.codigoUrl || titulo._id)}">${titulo.titulo}</a></span>
                 <span class="favorito-card-nota">${titulo.ano ? titulo.ano + " · " : ""}★ ${titulo.nota}</span>
             </div>
         </div>

@@ -174,6 +174,8 @@ describe("POST /titulos", () => {
 
         expect(res.status).toBe(200);
         expect(res.body.titulo).toBe("Inception");
+        expect(res.body.codigoUrl).toBeDefined();
+        expect(typeof res.body.codigoUrl).toBe("string");
     });
 
     test("deve rejeitar nota maior que 10", async () => {
@@ -235,8 +237,8 @@ describe("POST /titulos", () => {
 describe("GET /titulos", () => {
     test("deve listar os títulos da pessoa logada", async () => {
         const mock = [
-            { _id: "1", titulo: "Inception", tipo: "Filme", nota: 9 },
-            { _id: "2", titulo: "Breaking Bad", tipo: "Série", nota: 10 }
+            { _id: "1", titulo: "Inception", tipo: "Filme", nota: 9, codigoUrl: "cod1" },
+            { _id: "2", titulo: "Breaking Bad", tipo: "Série", nota: 10, codigoUrl: "cod2" }
         ];
         Titulo.find.mockResolvedValue(mock);
 
@@ -250,7 +252,7 @@ describe("GET /titulos", () => {
     });
 
     test("deve aplicar filtro por tipo", async () => {
-        Titulo.find.mockResolvedValue([{ _id: "1", titulo: "Inception", tipo: "Filme", nota: 9 }]);
+        Titulo.find.mockResolvedValue([{ _id: "1", titulo: "Inception", tipo: "Filme", nota: 9, codigoUrl: "cod1" }]);
 
         const res = await request(app).get("/titulos?tipo=Filme").set(cabecalhoAuth);
 
@@ -261,7 +263,7 @@ describe("GET /titulos", () => {
     });
 
     test("deve aplicar filtro por busca", async () => {
-        Titulo.find.mockResolvedValue([{ _id: "1", titulo: "Inception", tipo: "Filme", nota: 9 }]);
+        Titulo.find.mockResolvedValue([{ _id: "1", titulo: "Inception", tipo: "Filme", nota: 9, codigoUrl: "cod1" }]);
 
         const res = await request(app).get("/titulos?busca=inc").set(cabecalhoAuth);
 
@@ -269,6 +271,20 @@ describe("GET /titulos", () => {
         expect(Titulo.find).toHaveBeenCalledWith(
             expect.objectContaining({ titulo: expect.objectContaining({ $regex: "inc" }) })
         );
+    });
+
+    test("deve gerar e salvar codigoUrl em títulos antigos que não têm esse campo", async () => {
+        Titulo.findOne.mockResolvedValue(null); // uniqueness check dentro de gerarCodigoUrlUnico
+        const salvarMock = jest.fn().mockResolvedValue();
+        Titulo.find.mockResolvedValue([
+            { _id: "1", titulo: "Título Antigo", tipo: "Filme", nota: 9, codigoUrl: undefined, save: salvarMock }
+        ]);
+
+        const res = await request(app).get("/titulos").set(cabecalhoAuth);
+
+        expect(res.status).toBe(200);
+        expect(salvarMock).toHaveBeenCalled();
+        expect(res.body[0].codigoUrl).toBeDefined();
     });
 
     test("deve retornar 500 em erro interno", async () => {

@@ -46,6 +46,16 @@ const tituloSchema = new mongoose.Schema({
     comentario: {
         type: String,
         default: null
+    },
+    // Código curto e aleatório usado na URL da página de detalhes
+    // ("/detalhe/<codigoUrl>"), em vez do _id real do MongoDB — assim a URL
+    // não expõe o identificador interno do banco de dados. "sparse" permite
+    // que títulos antigos (de antes dessa mudança) fiquem sem esse campo até
+    // serem acessados pela primeira vez, sem conflitar com o índice único.
+    codigoUrl: {
+        type: String,
+        unique: true,
+        sparse: true
     }
 });
 
