@@ -32,8 +32,18 @@ async function fetchAutenticado(url, opcoes = {}) {
     return resposta;
 }
 
+// ── Id do título: lido da URL limpa ("/detalhe/<id>", em produção) ou do
+// formato antigo ("detalhe.html?id=<id>", usado ao abrir o arquivo direto do
+// disco em desenvolvimento local) — o que existir primeiro é usado.
 const params = new URLSearchParams(window.location.search);
-const id = params.get("id");
+let id = params.get("id");
+if (!id) {
+    const partesCaminho = window.location.pathname.split("/").filter(Boolean);
+    const ultimaParte = partesCaminho[partesCaminho.length - 1];
+    if (ultimaParte && ultimaParte !== "detalhe.html" && ultimaParte !== "detalhe") {
+        id = ultimaParte;
+    }
+}
 
 const secao = document.getElementById("secao-detalhe");
 

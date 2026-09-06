@@ -6,6 +6,14 @@
 // — não precisa trocar essa URL manualmente ao hospedar.
 const API_URL = location.protocol === "file:" ? "http://localhost:3000" : "";
 
+// Link para a página de detalhes: URL limpa ("/detalhe/<id>") quando servido
+// pelo backend (produção ou "npm start" local); formato antigo com "?id="
+// quando o arquivo é aberto direto do disco (file://), já que aí não existe
+// servidor pra entender a rota "/detalhe/<id>".
+function linkDetalhe(id) {
+    return location.protocol === "file:" ? `detalhe.html?id=${id}` : `/detalhe/${id}`;
+}
+
 // ── Sessão / login ─────────────────────────────────────────────────────────────
 // Cada pessoa tem sua própria conta; sem um token salvo, não faz sentido
 // mostrar a lista (ela pertenceria a ninguém). Redireciona pra tela de login.
@@ -246,7 +254,7 @@ async function listarTitulos() {
                 ${titulo.poster
                     ? `<img class="card-poster" src="${titulo.poster}" alt="">`
                     : `<div class="card-poster card-poster-vazio">🎬</div>`}
-                <span class="card-titulo"><a href="detalhe.html?id=${titulo._id}">${titulo.titulo}</a>${titulo.ano ? ` <span class="card-ano">(${titulo.ano})</span>` : ""}</span>
+                <span class="card-titulo"><a href="${linkDetalhe(titulo._id)}">${titulo.titulo}</a>${titulo.ano ? ` <span class="card-ano">(${titulo.ano})</span>` : ""}</span>
                 <span class="badge-tipo">${titulo.tipo}</span>
                 <span class="badge-nota">${titulo.nota}</span>
                 <span class="badge-status ${statusClasse}">${status}</span>
@@ -342,7 +350,7 @@ function renderizarDestaque(favoritos) {
                 : `<div class="favorito-poster-vazio">🎬</div>`}
             <button class="btn-remover-favorito-mini" data-id="${titulo._id}" title="Remover dos favoritos">★</button>
             <div class="favorito-card-info">
-                <span class="favorito-card-titulo"><a href="detalhe.html?id=${titulo._id}">${titulo.titulo}</a></span>
+                <span class="favorito-card-titulo"><a href="${linkDetalhe(titulo._id)}">${titulo.titulo}</a></span>
                 <span class="favorito-card-nota">${titulo.ano ? titulo.ano + " · " : ""}★ ${titulo.nota}</span>
             </div>
         </div>

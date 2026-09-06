@@ -18,6 +18,13 @@ app.use(express.json());
 // atrapalha quem abre o index.html direto no navegador (file://).
 app.use(express.static(path.join(__dirname, "..", "frontend-refinado")));
 
+// URL limpa pra página de detalhes: "/detalhe/<id>" em vez de
+// "/detalhe.html?id=<id>". Serve o mesmo arquivo estático de sempre — o
+// front-end lê o id direto do caminho da URL (veja frontend-refinado/detalhe.js).
+app.get("/detalhe/:id", (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "frontend-refinado", "detalhe.html"));
+});
+
 const Titulo = require("./models/Titulo");
 const Usuario = require("./models/Usuario");
 const { autenticar, JWT_SECRET } = require("./middleware/auth");

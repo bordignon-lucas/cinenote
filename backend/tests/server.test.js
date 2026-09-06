@@ -147,6 +147,19 @@ describe("Proteção das rotas de títulos", () => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────
+// GET /detalhe/:id — URL limpa da página de detalhes (sem .html/?id=)
+// ────────────────────────────────────────────────────────────────────────────
+describe("GET /detalhe/:id", () => {
+    test("deve servir a página de detalhes (não exige login, é HTML estático)", async () => {
+        const res = await request(app).get("/detalhe/6a9ceedbcf0619f909229e8d");
+
+        expect(res.status).toBe(200);
+        expect(res.type).toBe("text/html");
+        expect(res.text).toContain("CineNote");
+    });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
 // POST /titulos
 // ────────────────────────────────────────────────────────────────────────────
 describe("POST /titulos", () => {
